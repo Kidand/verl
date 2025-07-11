@@ -24,9 +24,8 @@ from collections import defaultdict
 import torch
 
 import verl.utils.torch_functional as verl_F
-from recipe.rlvr.rlvr_core_algos import agg_loss, compute_rlvr_policy_loss
+from verl.trainer.ppo.core_algos import agg_loss, compute_rlvr_policy_loss, kl_penalty
 from verl import DataProto
-from verl.trainer.ppo.core_algos import kl_penalty
 from verl.utils.profiler import GPUMemoryLogger
 from verl.utils.py_functional import append_to_dict
 from verl.utils.seqlen_balancing import get_reverse_idx, rearrange_micro_batches

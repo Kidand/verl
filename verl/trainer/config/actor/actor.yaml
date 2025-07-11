@@ -65,7 +65,13 @@ loss_agg_mode: token-mean
 # Entropy regularization coefficient in PPO loss
 entropy_coeff: 0
 
-# Whether to use KL loss instead of KL reward penalty. True for GRPO
+# RLVR: The percentile of token entropies to use as a threshold.
+# Only tokens with entropy >= this threshold will be used for loss calculation.
+# Set to 0.0 to disable and behave like DAPO.
+high_entropy_percentile: 0.0
+
+# whether to use kl loss in actor
+# oc.select: the default val for ref.use_kl_loss, rollout.use_kl_loss
 use_kl_loss: false
 
 # Whether to use torch.compile()

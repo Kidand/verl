@@ -22,8 +22,8 @@ import hydra
 import ray
 from omegaconf import OmegaConf
 
-from recipe.rlvr.rlvr_ray_trainer import RLVRRayTrainer
 from verl.trainer.ppo.reward import get_custom_reward_fn
+from verl.trainer.ppo.rlvr_ray_trainer import RLVRRayTrainer
 from verl.utils.device import is_cuda_available
 
 
@@ -51,6 +51,15 @@ class TaskRunner:
         from omegaconf import OmegaConf
         from verl.utils.fs import copy_to_local
         
+        # --- MONKEY PATCHING ---
+        # We replace the default actor class with our custom RLVR actor class
+        # before any workers that use it are instantiated. This is the correct
+        # way to inject custom logic without modifying the core library.
+        import verl.workers.actor.dp_actor
+        from verl.workers.actor.rlvr_dp_actor import RLVRDataParallelPPOActor
+        verl.workers.actor.dp_actor.DataParallelPPOActor = RLVRDataParallelPPOActor
+        # --- END MONKEY PATCHING ---
+
         print(f"TaskRunner hostname: {socket.gethostname()}, PID: {os.getpid()}")
         pprint(OmegaConf.to_container(config, resolve=True))
         OmegaConf.resolve(config)
@@ -61,15 +70,14 @@ class TaskRunner:
         tokenizer = hf_tokenizer(local_path)
         processor = hf_processor(local_path, use_fast=True)
 
-        # RLVR: Import the custom actor
-        from recipe.rlvr.rlvr_dp_actor import RLVRDataParallelPPOActor
+        # Now, when ActorRolloutRefWorker is imported and used, it will internally
+        # instantiate our RLVRDataParallelPPOActor instead of the default one.
         from verl.single_controller.ray import RayWorkerGroup
         from verl.trainer.ppo.ray_trainer import ResourcePoolManager, Role
         from verl.workers.fsdp_workers import ActorRolloutRefWorker, CriticWorker
 
-        # RLVR: Map the Actor role to our custom actor class
+        # Correct role worker mapping (removed Role.Actor)
         role_worker_mapping = {
-            Role.Actor: ray.remote(RLVRDataParallelPPOActor),
             Role.ActorRollout: ray.remote(ActorRolloutRefWorker),
             Role.Critic: ray.remote(CriticWorker),
         }
