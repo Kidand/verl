@@ -2,3 +2,5 @@ working_dir: ./
 excludes: ["/.git/"]
 env_vars:
   TORCH_NCCL_AVOID_RECORD_STREAMS: "1"
+  NCCL_SOCKET_IFNAME: net1
+  GLOO_SOCKET_IFNAME: net1
