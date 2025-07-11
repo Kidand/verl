@@ -58,7 +58,17 @@ class RLVRDataParallelPPOActor(DataParallelPPOActor):
             if response_mask.any():
                 valid_entropies = old_entropys[response_mask.bool()]
                 if valid_entropies.numel() > 0:
-                    threshold = torch.quantile(valid_entropies.float(), high_entropy_percentile)
+                    # RLVR OPTIMIZATION:
+                    # torch.quantile is computationally expensive on large, unsorted tensors.
+                    # For finding a single percentile, torch.kthvalue is significantly more efficient
+                    # as it's optimized for selection algorithms (finding the k-th smallest value).
+                    num_valid = valid_entropies.numel()
+                    # k-th smallest value is equivalent to the percentile.
+                    # For high_entropy_percentile=0.8, we find the value at the 80th percentile.
+                    k = int(num_valid * high_entropy_percentile)
+                    # Ensure k is within the valid range [1, num_valid] for kthvalue.
+                    k = max(1, min(k, num_valid))
+                    threshold = torch.kthvalue(valid_entropies.float(), k).values
                     high_entropy_mask = (old_entropys >= threshold).float()
                     metrics["actor/entropy_threshold"].append(threshold.item())
 
