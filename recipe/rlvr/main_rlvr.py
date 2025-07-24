@@ -23,7 +23,7 @@ import ray
 from omegaconf import OmegaConf
 
 from verl.trainer.ppo.reward import get_custom_reward_fn
-from verl.trainer.ppo.ray_trainer import RayTrainer # Use the original RayTrainer
+from verl.trainer.ppo.ray_trainer import RayPPOTrainer # Use the original RayPPOTrainer
 from verl.utils.device import is_cuda_available
 
 
@@ -106,8 +106,8 @@ def run_rlvr(config) -> None:
     
     resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)
 
-    # RLVR: Use the original RayTrainer, the monkey patching above is sufficient.
-    trainer = RayTrainer(
+    # RLVR: Use the original RayPPOTrainer, the monkey patching above is sufficient.
+    trainer = RayPPOTrainer(
         config=config,
         tokenizer=tokenizer,
         processor=processor,
